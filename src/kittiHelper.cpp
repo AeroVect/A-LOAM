@@ -50,7 +50,7 @@ int main(int argc, char** argv)
     n.getParam("publish_delay", publish_delay);
     publish_delay = publish_delay <= 0 ? 1 : publish_delay;
 
-    ros::Publisher pub_laser_cloud = n.advertise<sensor_msgs::PointCloud2>("/velodyne_points", 2);
+    ros::Publisher pub_laser_cloud = n.advertise<sensor_msgs::PointCloud2>("/points_concat", 2);
 
     image_transport::ImageTransport it(n);
     image_transport::Publisher pub_image_left = it.advertise("/image_left", 2);
@@ -58,12 +58,12 @@ int main(int argc, char** argv)
 
     ros::Publisher pubOdomGT = n.advertise<nav_msgs::Odometry> ("/odometry_gt", 5);
     nav_msgs::Odometry odomGT;
-    odomGT.header.frame_id = "/camera_init";
+    odomGT.header.frame_id = "/map";
     odomGT.child_frame_id = "/ground_truth";
 
     ros::Publisher pubPathGT = n.advertise<nav_msgs::Path> ("/path_gt", 5);
     nav_msgs::Path pathGT;
-    pathGT.header.frame_id = "/camera_init";
+    pathGT.header.frame_id = "/map";
 
     std::string timestamp_path = "sequences/" + sequence_number + "/times.txt";
     std::ifstream timestamp_file(dataset_folder + timestamp_path, std::ifstream::in);
@@ -153,7 +153,7 @@ int main(int argc, char** argv)
         sensor_msgs::PointCloud2 laser_cloud_msg;
         pcl::toROSMsg(laser_cloud, laser_cloud_msg);
         laser_cloud_msg.header.stamp = ros::Time().fromSec(timestamp);
-        laser_cloud_msg.header.frame_id = "/camera_init";
+        laser_cloud_msg.header.frame_id = "/map";
         pub_laser_cloud.publish(laser_cloud_msg);
 
         sensor_msgs::ImagePtr image_left_msg = cv_bridge::CvImage(laser_cloud_msg.header, "mono8", left_image).toImageMsg();
@@ -165,7 +165,7 @@ int main(int argc, char** argv)
         {
             bag_out.write("/image_left", ros::Time::now(), image_left_msg);
             bag_out.write("/image_right", ros::Time::now(), image_right_msg);
-            bag_out.write("/velodyne_points", ros::Time::now(), laser_cloud_msg);
+            bag_out.write("/points_concat", ros::Time::now(), laser_cloud_msg);
             bag_out.write("/path_gt", ros::Time::now(), pathGT);
             bag_out.write("/odometry_gt", ros::Time::now(), odomGT);
         }
